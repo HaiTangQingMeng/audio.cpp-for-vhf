@@ -875,6 +875,25 @@ struct Qwen3ASRThinkerRuntime::Impl {
             if (is_eos(config, token)) {
                 break;
             }
+            bool loop_detected = false;
+            for (size_t k = 1; k <= 8; ++k) {
+                if (out.token_ids.size() >= 5 * k) {
+                    const size_t sz = out.token_ids.size();
+                    bool match = true;
+                    for (size_t cycle = 1; cycle <= 4 && match; ++cycle) {
+                        for (size_t m = 0; m < k && match; ++m) {
+                            int32_t t1 = (m == 0) ? token : out.token_ids[sz - m];
+                            if (t1 != out.token_ids[sz - cycle * k - m]) match = false;
+                        }
+                    }
+                    if (match) {
+                        out.token_ids.resize(sz - 4 * k + 1);
+                        loop_detected = true;
+                        break;
+                    }
+                }
+            }
+            if (loop_detected) break;
             out.token_ids.push_back(token);
             logits = decode_graph->run_step(token);
         }
@@ -966,6 +985,26 @@ struct Qwen3ASRThinkerRuntime::Impl {
                 if (is_eos(config, tokens[lane])) {
                     finished[lane] = true;
                 } else {
+                    bool loop_detected = false;
+                    for (size_t k = 1; k <= 8; ++k) {
+                        if (outputs[lane].token_ids.size() >= 5 * k) {
+                            const size_t sz = outputs[lane].token_ids.size();
+                            bool match = true;
+                            for (size_t cycle = 1; cycle <= 4 && match; ++cycle) {
+                                for (size_t m = 0; m < k && match; ++m) {
+                                    int32_t t1 = (m == 0) ? tokens[lane] : outputs[lane].token_ids[sz - m];
+                                    if (t1 != outputs[lane].token_ids[sz - cycle * k - m]) match = false;
+                                }
+                            }
+                            if (match) {
+                                outputs[lane].token_ids.resize(sz - 4 * k + 1);
+                                finished[lane] = true;
+                                loop_detected = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (loop_detected) continue;
                     outputs[lane].token_ids.push_back(tokens[lane]);
                     any_active = true;
                 }
