@@ -1,0 +1,40 @@
+name: 自动同步官方上游最新代码
+
+on:
+  schedule:
+    # 每天北京时间中午 12:00 自动触发 (UTC 04:00)
+    - cron: '0 4 * * *'
+  # 支持在 GitHub 网页 Actions 页面手动点击 "Run workflow" 随时一键同步
+  workflow_dispatch:
+
+jobs:
+  sync_upstream:
+    name: 同步并平移自研补丁
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出当前仓库全量提交历史
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 配置 Git 提交作者
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 拉取官方最新提交
+        run: |
+          git remote add upstream https://github.com/0xShug0/audio.cpp.git || true
+          git fetch upstream main
+
+      - name: 将自研特性 Rebase 到官方最新代码之上
+        run: |
+          git rebase upstream/main
+
+      - name: 安全推送到个人 Fork 仓库
+        run: |
+          git push origin main --force-with-lease
