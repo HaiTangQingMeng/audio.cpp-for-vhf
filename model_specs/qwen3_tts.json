@@ -180,7 +180,10 @@
           "serena",
           "sohee",
           "uncle_fu",
-          "vivian"
+          "vivian",
+          "commander_chinese",
+          "commander_english",
+          "commander_navy"
         ],
         "required": false
       },

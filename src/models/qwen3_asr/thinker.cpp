@@ -875,6 +875,7 @@ struct Qwen3ASRThinkerRuntime::Impl {
             if (is_eos(config, token)) {
                 break;
             }
+            /*
             bool loop_detected = false;
             for (size_t k = 1; k <= 8; ++k) {
                 if (out.token_ids.size() >= 5 * k) {
@@ -894,6 +895,7 @@ struct Qwen3ASRThinkerRuntime::Impl {
                 }
             }
             if (loop_detected) break;
+            */
             out.token_ids.push_back(token);
             logits = decode_graph->run_step(token);
         }
@@ -985,6 +987,7 @@ struct Qwen3ASRThinkerRuntime::Impl {
                 if (is_eos(config, tokens[lane])) {
                     finished[lane] = true;
                 } else {
+                    /*
                     bool loop_detected = false;
                     for (size_t k = 1; k <= 8; ++k) {
                         if (outputs[lane].token_ids.size() >= 5 * k) {
@@ -1005,6 +1008,7 @@ struct Qwen3ASRThinkerRuntime::Impl {
                         }
                     }
                     if (loop_detected) continue;
+                    */
                     outputs[lane].token_ids.push_back(tokens[lane]);
                     any_active = true;
                 }
